@@ -41,11 +41,39 @@ def operation(account_id,manipulation,amount):
                 if manipulation=="deposit amount":
                     Amount=int(rows[i][3])+amount
                     rows[i][3]=Amount
-                elif manipulation=="withdraw amount" and int(rows[i][3])<amount:
+                elif (manipulation=="withdraw amount" or manipulation=="transfer amount") and int(rows[i][3])<amount:
                     return 0
-                else:
+                elif manipulation=="withdraw amount":
                     Amount = int(rows[i][3]) - amount
                     rows[i][3] = Amount
+                file.seek(0)
+                write.writerows(rows)
+                break
+
+def valid_user(account_id):
+    with open("bank_details.csv",'r') as file:
+        read=csv.DictReader(file)
+        for i in read:
+            if i['Account ID']==account_id:
+                return True
+    return False
+
+def amount_transfer(my_account,sending_account,amount):
+    with open("bank_details.csv","r+",newline='') as file:
+        read=csv.reader(file)
+        write=csv.writer(file)
+        rows=list(read)
+        counter=0
+        for i in range(1,len(rows)):
+            if rows[i][0]==my_account:
+                Amount=int(rows[i][3])-amount
+                rows[i][3]=Amount
+                counter+=1
+            if rows[i][0]==sending_account:
+                Amount=int(rows[i][3])+amount
+                rows[i][3]=Amount
+                counter+=1
+            if counter==2:
                 file.seek(0)
                 write.writerows(rows)
                 break
@@ -74,7 +102,7 @@ while(1):
 
             if login!=0:
                 while (1):
-                    print("Select the option \n 1) Check Balance \n 2) Deposit Amount \n 3) WithDraw Amount \n 4) Logout")
+                    print("Select the option \n 1) Check Balance \n 2) Deposit Amount \n 3) WithDraw Amount \n 4) Transfer amount \n 5) Logout")
                     option_2=int(input("Enter the option : "))
 
                     match option_2:
@@ -91,13 +119,31 @@ while(1):
                         case 3:
                             withdraw_amount=int(input("Enter the withdraw amount : "))
                             withdraw=operation(login,"withdraw amount",withdraw_amount)
-                            if withdraw==0:
+                            while withdraw==0:
                                 print("Can't able to withdraw your available balance is less than the with draw amount")
                                 withdraw_amount = int(input("Renter the withdraw amount : "))
-                                withdraw = operation(login, "withdraw amount", withdraw_amount)
+                            withdraw = operation(login, "withdraw amount", withdraw_amount)
                             print("Amount with drawn successfully")
 
                         case 4:
+                            another_account=input("Enter the account id you want to send : ")
+                            valid_account=valid_user(another_account)
+
+                            while valid_account!=True:
+                                another_account = input("Renter the account id you want to send : ")
+                                valid_account = valid_user(another_account)
+
+                            amount=int(input("Enter the amount to be shared : "))
+                            valid_amount=operation(login,"transfer amount",amount)
+                            while valid_amount==0:
+                                print("Can't able to transfer the amount because your available balance is less than the entered amount ")
+                                amount = int(input("Enter the amount to be shared : "))
+                                valid_amount = operation(login, "transfer amount", amount)
+
+                            amount_transfer(login, another_account, amount)
+
+
+                        case 5:
                             break
 
         case 3:
